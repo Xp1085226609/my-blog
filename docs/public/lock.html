@@ -24,8 +24,7 @@ body{
   border-radius:16px;
   max-width:420px;width:calc(100% - 40px);
   box-shadow:0 10px 30px #0006;
-  z-index:2;
-  position:relative;
+  position:relative;z-index:2;
 }
 .title{text-align:center;font-size:26px;margin-bottom:10px;color:#222;}
 .desc{text-align:center;color:#666;margin-bottom:30px;}
@@ -33,7 +32,6 @@ body{
 #pwdInput{
   width:100%;padding:14px 16px;font-size:16px;
   border:1px solid #ddd;border-radius:10px;outline:none;
-  pointer-events:auto;
 }
 #submitBtn{
   width:100%;padding:14px;background:#3b82f6;color:#fff;
@@ -96,7 +94,6 @@ const bgLayer = document.getElementById('bgLayer');
 const bgMusic = document.getElementById('bgMusic');
 const musicBtn = document.getElementById('musicBtn');
 
-//深色模式
 themeBtn.onclick = ()=> document.body.classList.toggle('dark');
 
 let isMusicPlaying = false;
@@ -138,7 +135,7 @@ logoutBtn.onclick = ()=>{
   musicBtn.style.display="block";
 }
 submitBtn.onclick = checkPassword;
-pwdInput.onkeydown = e=> e.key==="Enter" && checkPassword();
+// ==========删掉了原来的 pwdInput.onkeydown 回车事件！！这就是元凶！！==========
 </script>
 </body>
 </html>
