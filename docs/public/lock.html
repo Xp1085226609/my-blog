@@ -55,7 +55,8 @@ body{
   left:0;
   width:100%;
   height:100%;
-  background-image:url('https://p3-flow-image-sign.douyinpic.com/tos-cn-i-3j0l3a034e/30e0000191964842990042024~tplv-3j0l3a034e-image.image');
+  /* 渐变兜底，不会因为图片失效空白 */
+  background: radial-gradient(circle at center,#333,#000);
   background-size:cover;
   background-position:center;
   background-repeat:no-repeat;
@@ -67,7 +68,6 @@ body{
   pointer-events:none;
 }
 
-/* 音乐控制按钮 */
 .music-btn{
   position:fixed;
   top:20px;
@@ -78,6 +78,7 @@ body{
   background:var(--card-bg);
   color:var(--text);
   cursor:pointer;
+  z-index:20;
 }
 
 .theme-switch{
@@ -90,6 +91,7 @@ body{
   background:var(--card-bg);
   color:var(--text);
   cursor:pointer;
+  z-index:20;
 }
 
 .card{
@@ -178,14 +180,12 @@ body{
 </style>
 </head>
 <body>
-<!-- 自适应背景层 -->
 <div class="bg-layer" id="bgLayer"></div>
-<!-- 背景音乐 -->
-<audio id="bgMusic" loop>
+<audio id="bgMusic" loop preload="none">
   <source src="https://music.163.com/song/media/outer/url?id=33894312.mp3" type="audio/mpeg">
 
-<!-- 音乐控制按钮 -->
-<button class="music-btn" id="musicBtn">🔇 暂停音乐</button>
+
+<button class="music-btn" id="musicBtn">🔊 播放音乐</button>
 <button class="theme-switch" id="themeBtn">切换深色模式</button>
 
 <div class="card">
@@ -221,7 +221,7 @@ const bgLayer = document.getElementById('bgLayer');
 const bgMusic = document.getElementById('bgMusic');
 const musicBtn = document.getElementById('musicBtn');
 
-// 主题初始化：跟随系统
+// 主题初始化
 let isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 if(isDark) document.body.classList.add('dark');
 updateThemeText();
@@ -238,17 +238,21 @@ function updateThemeText(){
   }
 }
 
-// 音乐控制
+// 音乐控制，增加异常捕获
 let isMusicPlaying = false;
-musicBtn.onclick = ()=>{
-  if(isMusicPlaying){
-    bgMusic.pause();
-    musicBtn.innerText = "🔊 播放音乐";
-  }else{
-    bgMusic.play();
-    musicBtn.innerText = "🔇 暂停音乐";
+musicBtn.onclick = async ()=>{
+  try{
+    if(isMusicPlaying){
+      bgMusic.pause();
+      musicBtn.innerText = "🔊 播放音乐";
+    }else{
+      await bgMusic.play();
+      musicBtn.innerText = "🔇 暂停音乐";
+    }
+    isMusicPlaying = !isMusicPlaying;
+  }catch(e){
+    alert("浏览器限制，需要点击页面后才能播放音乐");
   }
-  isMusicPlaying = !isMusicPlaying;
 }
 
 // 密码校验
@@ -275,7 +279,6 @@ function checkPassword(){
 function showContent(){
   verifyBox.style.display = "none";
   contentBox.style.display = "block";
-  // 登录成功：隐藏背景+暂停音乐
   bgLayer.classList.add('hidden');
   bgMusic.pause();
   musicBtn.style.display = "none";
@@ -285,7 +288,6 @@ logoutBtn.onclick = function(){
   localStorage.removeItem(STORAGE_KEY);
   verifyBox.style.display = "block";
   contentBox.style.display = "none";
-  // 退出登录：恢复背景+音乐控制
   bgLayer.classList.remove('hidden');
   musicBtn.style.display = "block";
 }
