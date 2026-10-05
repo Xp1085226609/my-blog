@@ -1,11 +1,12 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: "我的个人技术博客",
+  title: "我的博客",
+  description: "个人博客站点",
   themeConfig: {
     nav: [
       { text: "首页", link: "/" },
-      { text: "Hello", link: "/hello" }
+      { text: "文章", link: "/article1.md" }
     ]
   }
 })
