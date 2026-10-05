@@ -11,22 +11,97 @@
   box-sizing:border-box;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
 }
+
+:root{
+  --bg:#ffffff;
+  --card-bg:#fff;
+  --text:#222;
+  --text-secondary:#666;
+  --border:#eee;
+  --input-border:#ddd;
+  --primary:#3b82f6;
+  --primary-hover:#2563eb;
+  --danger:#ef4444;
+  --shadow:0 10px 30px rgba(0,0,0,0.1);
+}
+
+.dark{
+  --bg:#1e1e1e;
+  --card-bg:#2a2a2a;
+  --text:#eee;
+  --text-secondary:#aaa;
+  --border:#3a3a3a;
+  --input-border:#555;
+  --shadow:0 10px 30px rgba(0,0,0,0.35);
+}
+
 body{
-  background-color:#ffffff;
-  color:#222;
+  background-color:var(--bg);
+  color:var(--text);
   min-height:100vh;
   display:flex;
   align-items:center;
   justify-content:center;
   padding:20px;
+  transition: background 0.3s, color 0.3s;
+  position:relative;
+  overflow:hidden;
 }
+
+/* 自适应背景层 登录成功后隐藏 */
+.bg-layer{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background-image:url('https://p3-flow-image-sign.douyinpic.com/tos-cn-i-3j0l3a034e/30e0000191964842990042024~tplv-3j0l3a034e-image.image');
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  z-index:-1;
+  transition:opacity 0.5s;
+}
+.bg-layer.hidden{
+  opacity:0;
+  pointer-events:none;
+}
+
+/* 音乐控制按钮 */
+.music-btn{
+  position:fixed;
+  top:20px;
+  left:20px;
+  padding:8px 14px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--card-bg);
+  color:var(--text);
+  cursor:pointer;
+}
+
+.theme-switch{
+  position:fixed;
+  top:20px;
+  right:20px;
+  padding:8px 14px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--card-bg);
+  color:var(--text);
+  cursor:pointer;
+}
+
 .card{
   width:100%;
   max-width:420px;
   padding:36px;
   border-radius:16px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.1);
-  border:1px solid #eee;
+  box-shadow:var(--shadow);
+  border:1px solid var(--border);
+  background:var(--card-bg);
+  transition: 0.3s;
+  z-index:10;
 }
 .title{
   font-size:26px;
@@ -36,7 +111,7 @@ body{
 }
 .desc{
   text-align:center;
-  color:#666;
+  color:var(--text-secondary);
   margin-bottom:30px;
 }
 .input-wrap{
@@ -45,20 +120,22 @@ body{
 #pwdInput{
   width:100%;
   padding:14px 16px;
-  border:1px solid #ddd;
+  border:1px solid var(--input-border);
   border-radius:10px;
   font-size:16px;
   outline:none;
+  background:var(--card-bg);
+  color:var(--text);
   transition:0.2s;
 }
 #pwdInput:focus{
-  border-color:#3b82f6;
+  border-color:var(--primary);
   box-shadow:0 0 0 3px rgba(59,130,246,0.15);
 }
 #submitBtn{
   width:100%;
   padding:14px;
-  background:#3b82f6;
+  background:var(--primary);
   color:white;
   border:none;
   border-radius:10px;
@@ -67,10 +144,10 @@ body{
   transition:0.2s;
 }
 #submitBtn:hover{
-  background:#2563eb;
+  background:var(--primary-hover);
 }
 #errorTip{
-  color:#ef4444;
+  color:var(--danger);
   text-align:center;
   margin-top:16px;
   display:none;
@@ -82,15 +159,35 @@ body{
   display:block;
   text-align:center;
   margin-top:18px;
-  color:#3b82f6;
+  color:var(--primary);
   text-decoration:none;
 }
 .link-item:hover{
   text-decoration:underline;
 }
+.logout-btn{
+  margin-top:24px;
+  width:100%;
+  padding:12px;
+  border:1px solid var(--input-border);
+  background:transparent;
+  color:var(--text);
+  border-radius:10px;
+  cursor:pointer;
+}
 </style>
 </head>
 <body>
+<!-- 自适应背景层 -->
+<div class="bg-layer" id="bgLayer"></div>
+<!-- 背景音乐 -->
+<audio id="bgMusic" loop>
+  <source src="https://music.163.com/song/media/outer/url?id=33894312.mp3" type="audio/mpeg">
+
+<!-- 音乐控制按钮 -->
+<button class="music-btn" id="musicBtn">🔇 暂停音乐</button>
+<button class="theme-switch" id="themeBtn">切换深色模式</button>
+
 <div class="card">
   <div id="verifyBox">
     <h2 class="title">博客访问验证</h2>
@@ -107,6 +204,7 @@ body{
     <p class="desc">验证成功，欢迎浏览</p >
     <a class="link-item" href=" ">返回博客首页</a >
     <a class="link-item" href="./article1.html">查看第一篇文章</a >
+    <button class="logout-btn" id="logoutBtn">退出登录</button>
   </div>
 </div>
 
@@ -117,7 +215,43 @@ const contentBox = document.getElementById('contentBox');
 const errorTip = document.getElementById('errorTip');
 const submitBtn = document.getElementById('submitBtn');
 const pwdInput = document.getElementById('pwdInput');
+const logoutBtn = document.getElementById('logoutBtn');
+const themeBtn = document.getElementById('themeBtn');
+const bgLayer = document.getElementById('bgLayer');
+const bgMusic = document.getElementById('bgMusic');
+const musicBtn = document.getElementById('musicBtn');
 
+// 主题初始化：跟随系统
+let isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+if(isDark) document.body.classList.add('dark');
+updateThemeText();
+
+themeBtn.onclick = ()=>{
+  document.body.classList.toggle('dark');
+  updateThemeText();
+}
+function updateThemeText(){
+  if(document.body.classList.contains('dark')){
+    themeBtn.innerText = "切换浅色模式";
+  }else{
+    themeBtn.innerText = "切换深色模式";
+  }
+}
+
+// 音乐控制
+let isMusicPlaying = false;
+musicBtn.onclick = ()=>{
+  if(isMusicPlaying){
+    bgMusic.pause();
+    musicBtn.innerText = "🔊 播放音乐";
+  }else{
+    bgMusic.play();
+    musicBtn.innerText = "🔇 暂停音乐";
+  }
+  isMusicPlaying = !isMusicPlaying;
+}
+
+// 密码校验
 if(localStorage.getItem(STORAGE_KEY) === 'ok'){
   showContent();
 }
@@ -141,6 +275,19 @@ function checkPassword(){
 function showContent(){
   verifyBox.style.display = "none";
   contentBox.style.display = "block";
+  // 登录成功：隐藏背景+暂停音乐
+  bgLayer.classList.add('hidden');
+  bgMusic.pause();
+  musicBtn.style.display = "none";
+}
+
+logoutBtn.onclick = function(){
+  localStorage.removeItem(STORAGE_KEY);
+  verifyBox.style.display = "block";
+  contentBox.style.display = "none";
+  // 退出登录：恢复背景+音乐控制
+  bgLayer.classList.remove('hidden');
+  musicBtn.style.display = "block";
 }
 </script>
 </body>
