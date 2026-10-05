@@ -2,189 +2,61 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>博客访问验证</title>
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
-}
-
-:root{
-  --bg:#ffffff;
-  --card-bg:#fff;
-  --text:#222;
-  --text-secondary:#666;
-  --border:#eee;
-  --input-border:#ddd;
-  --primary:#3b82f6;
-  --primary-hover:#2563eb;
-  --danger:#ef4444;
-  --shadow:0 10px 30px rgba(0,0,0,0.1);
-}
-
-.dark{
-  --bg:#1e1e1e;
-  --card-bg:#2a2a2a;
-  --text:#eee;
-  --text-secondary:#aaa;
-  --border:#3a3a3a;
-  --input-border:#555;
-  --shadow:0 10px 30px rgba(0,0,0,0.35);
-}
-
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
 body{
-  background-color:var(--bg);
-  color:var(--text);
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-  transition: background 0.3s, color 0.3s;
-  position:relative;
+  width:100vw;height:100vh;
+  display:flex;align-items:center;justify-content:center;
   overflow:hidden;
 }
-
-/* 自适应背景层 登录成功后隐藏 */
 .bg-layer{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  /* 渐变兜底，不会因为图片失效空白 */
-  background: radial-gradient(circle at center,#333,#000);
-  background-size:cover;
-  background-position:center;
-  background-repeat:no-repeat;
+  position:fixed;inset:0;
+  background:radial-gradient(#333,#000);
   z-index:-1;
   transition:opacity 0.5s;
 }
-.bg-layer.hidden{
-  opacity:0;
-  pointer-events:none;
-}
-
-.music-btn{
-  position:fixed;
-  top:20px;
-  left:20px;
-  padding:8px 14px;
-  border-radius:8px;
-  border:1px solid var(--border);
-  background:var(--card-bg);
-  color:var(--text);
-  cursor:pointer;
-  z-index:20;
-}
-
-.theme-switch{
-  position:fixed;
-  top:20px;
-  right:20px;
-  padding:8px 14px;
-  border-radius:8px;
-  border:1px solid var(--border);
-  background:var(--card-bg);
-  color:var(--text);
-  cursor:pointer;
-  z-index:20;
-}
-
+.bg-layer.hidden{opacity:0;pointer-events:none;}
 .card{
-  width:100%;
-  max-width:420px;
+  background:#fff;
   padding:36px;
   border-radius:16px;
-  box-shadow:var(--shadow);
-  border:1px solid var(--border);
-  background:var(--card-bg);
-  transition: 0.3s;
-  z-index:10;
+  max-width:420px;width:calc(100% - 40px);
+  box-shadow:0 10px 30px #0006;
 }
-.title{
-  font-size:26px;
-  font-weight:600;
-  text-align:center;
-  margin-bottom:10px;
-}
-.desc{
-  text-align:center;
-  color:var(--text-secondary);
-  margin-bottom:30px;
-}
-.input-wrap{
-  margin-bottom:24px;
-}
+.title{text-align:center;font-size:26px;margin-bottom:10px;color:#222;}
+.desc{text-align:center;color:#666;margin-bottom:30px;}
+.input-wrap{margin-bottom:24px;}
 #pwdInput{
-  width:100%;
-  padding:14px 16px;
-  border:1px solid var(--input-border);
-  border-radius:10px;
-  font-size:16px;
-  outline:none;
-  background:var(--card-bg);
-  color:var(--text);
-  transition:0.2s;
-}
-#pwdInput:focus{
-  border-color:var(--primary);
-  box-shadow:0 0 0 3px rgba(59,130,246,0.15);
+  width:100%;padding:14px 16px;font-size:16px;
+  border:1px solid #ddd;border-radius:10px;outline:none;
 }
 #submitBtn{
-  width:100%;
-  padding:14px;
-  background:var(--primary);
-  color:white;
-  border:none;
-  border-radius:10px;
-  font-size:16px;
-  cursor:pointer;
-  transition:0.2s;
+  width:100%;padding:14px;background:#3b82f6;color:#fff;
+  border:none;border-radius:10px;font-size:16px;cursor:pointer;
 }
-#submitBtn:hover{
-  background:var(--primary-hover);
-}
-#errorTip{
-  color:var(--danger);
-  text-align:center;
-  margin-top:16px;
-  display:none;
-}
-#contentBox{
-  display:none;
-}
-.link-item{
-  display:block;
-  text-align:center;
-  margin-top:18px;
-  color:var(--primary);
-  text-decoration:none;
-}
-.link-item:hover{
-  text-decoration:underline;
-}
+#errorTip{color:#ef4444;text-align:center;margin-top:16px;display:none;}
+#contentBox{display:none;}
+.link-item{display:block;text-align:center;margin-top:18px;color:#3b82f6}
 .logout-btn{
-  margin-top:24px;
-  width:100%;
-  padding:12px;
-  border:1px solid var(--input-border);
-  background:transparent;
-  color:var(--text);
-  border-radius:10px;
-  cursor:pointer;
+  width:100%;margin-top:24px;padding:12px;
+  border:1px solid #ddd;background:transparent;border-radius:10px;cursor:pointer;
 }
+.music-btn,.theme-switch{
+  position:fixed;z-index:20;
+  padding:8px 14px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;
+}
+.music-btn{top:20px;left:20px;}
+.theme-switch{top:20px;right:20px;}
+body.dark{--bg:#1e1e1e;--card:#2a2a2a;--text:#eee;--text2:#aaa;--border:#555;}
+body.dark .card{background:#2a2a2a;color:#eee;}
+body.dark .title{color:#eee;}
+body.dark .desc{color:#aaa;}
 </style>
 </head>
 <body>
 <div class="bg-layer" id="bgLayer"></div>
-<audio id="bgMusic" loop preload="none">
-  <source src="https://music.163.com/song/media/outer/url?id=33894312.mp3" type="audio/mpeg">
-
-
 <button class="music-btn" id="musicBtn">🔊 播放音乐</button>
 <button class="theme-switch" id="themeBtn">切换深色模式</button>
 
@@ -193,12 +65,11 @@ body{
     <h2 class="title">博客访问验证</h2>
     <p class="desc">请输入访问密码进入博客</p >
     <div class="input-wrap">
-      <input type="password" id="pwdInput" placeholder="输入密码" autofocus>
+      <input type="password" id="pwdInput" placeholder="输入密码">
     </div>
     <button id="submitBtn">确认访问</button>
     <div id="errorTip">密码错误，请重新输入</div>
   </div>
-
   <div id="contentBox">
     <h2 class="title">欢迎来到我的博客</h2>
     <p class="desc">验证成功，欢迎浏览</p >
@@ -207,6 +78,9 @@ body{
     <button class="logout-btn" id="logoutBtn">退出登录</button>
   </div>
 </div>
+
+<audio id="bgMusic" loop preload="none">
+
 
 <script>
 const STORAGE_KEY = "blogAuth";
@@ -221,24 +95,9 @@ const bgLayer = document.getElementById('bgLayer');
 const bgMusic = document.getElementById('bgMusic');
 const musicBtn = document.getElementById('musicBtn');
 
-// 主题初始化
-let isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-if(isDark) document.body.classList.add('dark');
-updateThemeText();
+//深色模式
+themeBtn.onclick = ()=> document.body.classList.toggle('dark');
 
-themeBtn.onclick = ()=>{
-  document.body.classList.toggle('dark');
-  updateThemeText();
-}
-function updateThemeText(){
-  if(document.body.classList.contains('dark')){
-    themeBtn.innerText = "切换浅色模式";
-  }else{
-    themeBtn.innerText = "切换深色模式";
-  }
-}
-
-// 音乐控制，增加异常捕获
 let isMusicPlaying = false;
 musicBtn.onclick = async ()=>{
   try{
@@ -250,47 +109,35 @@ musicBtn.onclick = async ()=>{
       musicBtn.innerText = "🔇 暂停音乐";
     }
     isMusicPlaying = !isMusicPlaying;
-  }catch(e){
-    alert("浏览器限制，需要点击页面后才能播放音乐");
-  }
-}
-
-// 密码校验
-if(localStorage.getItem(STORAGE_KEY) === 'ok'){
-  showContent();
-}
-
-submitBtn.onclick = checkPassword;
-pwdInput.onkeydown = function(e){
-  if(e.key === 'Enter') checkPassword();
+  }catch(e){alert("需要点击页面后播放音乐");}
 }
 
 function checkPassword(){
-  const inputPwd = pwdInput.value.trim();
-  if(inputPwd === "123456"){
+  const val = pwdInput.value.trim();
+  if(val === "123456"){
     localStorage.setItem(STORAGE_KEY,"ok");
     showContent();
   }else{
-    errorTip.style.display = "block";
-    pwdInput.value = "";
+    errorTip.style.display="block";
+    pwdInput.value="";
   }
 }
-
 function showContent(){
-  verifyBox.style.display = "none";
-  contentBox.style.display = "block";
+  verifyBox.style.display="none";
+  contentBox.style.display="block";
   bgLayer.classList.add('hidden');
   bgMusic.pause();
-  musicBtn.style.display = "none";
+  musicBtn.style.display="none";
 }
-
-logoutBtn.onclick = function(){
+logoutBtn.onclick = ()=>{
   localStorage.removeItem(STORAGE_KEY);
-  verifyBox.style.display = "block";
-  contentBox.style.display = "none";
+  verifyBox.style.display="block";
+  contentBox.style.display="none";
   bgLayer.classList.remove('hidden');
-  musicBtn.style.display = "block";
+  musicBtn.style.display="block";
 }
+submitBtn.onclick = checkPassword;
+pwdInput.onkeydown = e=> e.key==="Enter" && checkPassword();
 </script>
 </body>
 </html>
