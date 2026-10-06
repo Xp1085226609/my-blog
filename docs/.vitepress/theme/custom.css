@@ -1,0 +1,107 @@
+:root {
+  --vp-c-bg: rgba(255, 255, 255, 0.72);
+  --vp-c-bg-soft: rgba(255, 255, 255, 0.6);
+  --vp-c-bg-soft-mute: rgba(255, 255, 255, 0.42);
+  --vp-c-text-1: #4b2a4a;
+  --vp-c-text-2: #6b4a6a;
+  --vp-c-text-3: #866886;
+  --vp-c-brand: #d63384;
+  --vp-c-brand-light: #ec4899;
+  --vp-c-border: rgba(255, 255, 255, 0.45);
+  --vp-code-bg: rgba(255, 255, 255, 0.6);
+  --vp-code-text: #83185c;
+  --vp-shadow: 0 10px 30px rgba(80, 20, 60, 0.18);
+}
+
+.dark {
+  --vp-c-bg: rgba(20, 12, 30, 0.62);
+  --vp-c-bg-soft: rgba(30, 20, 48, 0.5);
+  --vp-c-bg-soft-mute: rgba(30, 20, 48, 0.32);
+  --vp-c-text-1: #fdf2f8;
+  --vp-c-text-2: #e9d5ff;
+  --vp-c-text-3: #c4b5fd;
+  --vp-c-brand: #f472b6;
+  --vp-c-brand-light: #f9a8d4;
+  --vp-c-border: rgba(255, 255, 255, 0.14);
+  --vp-code-bg: rgba(30, 20, 48, 0.72);
+  --vp-code-text: #fbcfe8;
+  --vp-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+html,
+body {
+  background: none !important;
+}
+
+body {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI",
+    "Microsoft YaHei", "Segoe UI", system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.3px;
+}
+
+.layout {
+  background-color: transparent !important;
+}
+
+.VPLayout {
+  background-image: url("/my-blog/blog-bg-light.jpg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.dark .VPLayout {
+  background-image: url("/my-blog/blog-bg-dark.jpg");
+}
+
+.VPContent {
+  background: var(--vp-c-bg);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border: 1px solid var(--vp-c-border);
+  border-radius: 22px;
+  box-shadow: var(--vp-shadow);
+  padding: 36px;
+}
+
+.VPContent h1,
+.VPContent h2,
+.VPContent h3 {
+  color: var(--vp-c-text-1);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.VPContent p,
+.VPContent li {
+  color: var(--vp-c-text-2);
+  line-height: 1.9;
+}
+
+.VPContent a {
+  color: var(--vp-c-brand);
+  transition: color 0.2s ease;
+}
+
+.VPContent a:hover {
+  color: var(--vp-c-brand-light);
+}
+
+.VPContent code {
+  background: var(--vp-code-bg);
+  color: var(--vp-code-text);
+  border-radius: 10px;
+  padding: 3px 8px;
+  font-size: 0.92em;
+}
+
+.VPContent pre {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--vp-c-border);
+  border-radius: 16px;
+  box-shadow: var(--vp-shadow);
+}
+
+.dark .VPContent pre {
+  background: rgba(30, 20, 48, 0.6);
+}
