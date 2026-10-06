@@ -1,107 +1,181 @@
 :root {
-  --vp-c-bg: rgba(255, 255, 255, 0.72);
-  --vp-c-bg-soft: rgba(255, 255, 255, 0.6);
-  --vp-c-bg-soft-mute: rgba(255, 255, 255, 0.42);
-  --vp-c-text-1: #4b2a4a;
-  --vp-c-text-2: #6b4a6a;
-  --vp-c-text-3: #866886;
-  --vp-c-brand: #d63384;
-  --vp-c-brand-light: #ec4899;
-  --vp-c-border: rgba(255, 255, 255, 0.45);
-  --vp-code-bg: rgba(255, 255, 255, 0.6);
-  --vp-code-text: #83185c;
-  --vp-shadow: 0 10px 30px rgba(80, 20, 60, 0.18);
+  --vp-card-bg: rgba(255, 255, 255, 0.78);
+  --vp-card-border: rgba(255, 255, 255, 0.55);
+  --vp-text-main: #2a1a2e;
+  --vp-text-sub: #4a3550;
+  --vp-text-mute: #6e5a75;
+  --vp-accent: #ad1457;
+  --vp-accent-hover: #c2185b;
+  --vp-btn-bg: rgba(255, 255, 255, 0.7);
+  --vp-shadow: 0 8px 32px rgba(50, 20, 50, 0.18);
+  --vp-code-bg: rgba(255, 255, 255, 0.75);
 }
 
-.dark {
-  --vp-c-bg: rgba(20, 12, 30, 0.62);
-  --vp-c-bg-soft: rgba(30, 20, 48, 0.5);
-  --vp-c-bg-soft-mute: rgba(30, 20, 48, 0.32);
-  --vp-c-text-1: #fdf2f8;
-  --vp-c-text-2: #e9d5ff;
-  --vp-c-text-3: #c4b5fd;
-  --vp-c-brand: #f472b6;
-  --vp-c-brand-light: #f9a8d4;
-  --vp-c-border: rgba(255, 255, 255, 0.14);
-  --vp-code-bg: rgba(30, 20, 48, 0.72);
-  --vp-code-text: #fbcfe8;
-  --vp-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+html.dark {
+  --vp-card-bg: rgba(18, 12, 32, 0.68);
+  --vp-card-border: rgba(255, 255, 255, 0.14);
+  --vp-text-main: #f5f0fa;
+  --vp-text-sub: #d8cfe4;
+  --vp-text-mute: #a89bb8;
+  --vp-accent: #f8bbd0;
+  --vp-accent-hover: #fce4ec;
+  --vp-btn-bg: rgba(255, 255, 255, 0.1);
+  --vp-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --vp-code-bg: rgba(18, 12, 32, 0.8);
 }
 
-html,
-body {
-  background: none !important;
-}
-
+/* === 背景图直接挂在 body 最底层 === */
 body {
   font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI",
     "Microsoft YaHei", "Segoe UI", system-ui, -apple-system, sans-serif;
   letter-spacing: 0.3px;
-}
-
-.layout {
-  background-color: transparent !important;
-}
-
-.VPLayout {
-  background-image: url("/my-blog/blog-bg-light.jpg");
+  background-image: url("/my-blog/blog-bg-light.jpg") !important;
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-color: #f3e8f0 !important;
+  min-height: 100vh;
 }
 
-.dark .VPLayout {
-  background-image: url("/my-blog/blog-bg-dark.jpg");
+html.dark body {
+  background-image: url("/my-blog/blog-bg-dark.jpg") !important;
+  background-color: #0d0a1a !important;
 }
 
-.VPContent {
-  background: var(--vp-c-bg);
-  backdrop-filter: blur(20px) saturate(1.6);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  border: 1px solid var(--vp-c-border);
+/* 让 VitePress 默认容器透明，露出底下的 body 背景 */
+.VPLayout,
+.VPSidebar,
+.VPNavBar,
+.VPContent,
+.VPDoc,
+.VPDoc aside,
+.VPNavBarBanner,
+.VPNavBarMenu,
+.VPNavBarMenuGroup,
+.VPNavBarMenuLink {
+  background-color: transparent !important;
+}
+
+/* === 正文毛玻璃卡片 === */
+.vp-doc {
+  background: var(--vp-card-bg);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid var(--vp-card-border);
   border-radius: 22px;
   box-shadow: var(--vp-shadow);
-  padding: 36px;
+  padding: 36px 40px;
+  margin: 24px 0;
 }
 
-.VPContent h1,
-.VPContent h2,
-.VPContent h3 {
-  color: var(--vp-c-text-1);
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3 {
+  color: var(--vp-text-main);
   font-weight: 600;
   letter-spacing: 1px;
+  margin-top: 1.6em;
 }
 
-.VPContent p,
-.VPContent li {
-  color: var(--vp-c-text-2);
+.vp-doc p,
+.vp-doc li {
+  color: var(--vp-text-sub);
   line-height: 1.9;
 }
 
-.VPContent a {
-  color: var(--vp-c-brand);
-  transition: color 0.2s ease;
+.vp-doc strong {
+  color: var(--vp-text-main);
 }
 
-.VPContent a:hover {
-  color: var(--vp-c-brand-light);
+/* === 正文链接按钮化 === */
+.vp-doc a {
+  display: inline-block;
+  padding: 4px 14px;
+  margin: 2px 4px;
+  background: var(--vp-btn-bg);
+  border: 1px solid var(--vp-card-border);
+  border-radius: 999px;
+  color: var(--vp-accent) !important;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
-.VPContent code {
+.vp-doc a:hover {
+  background: var(--vp-accent);
+  color: #fff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(173, 20, 87, 0.3);
+}
+
+/* === 代码块 === */
+.vp-doc code {
   background: var(--vp-code-bg);
-  color: var(--vp-code-text);
-  border-radius: 10px;
-  padding: 3px 8px;
+  color: var(--vp-accent);
+  border-radius: 8px;
+  padding: 2px 8px;
   font-size: 0.92em;
 }
 
-.VPContent pre {
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid var(--vp-c-border);
+.vp-doc pre {
+  background: var(--vp-code-bg);
+  border: 1px solid var(--vp-card-border);
   border-radius: 16px;
   box-shadow: var(--vp-shadow);
+  padding: 18px 22px;
 }
 
-.dark .VPContent pre {
-  background: rgba(30, 20, 48, 0.6);
+/* === 导航栏项按钮化 === */
+.VPNavBar .VPNavBarMenuLink,
+.VPNavBar .VPNavBarMenuGroup,
+.VPNavBar .nav-title {
+  border: 1px solid var(--vp-card-border);
+  border-radius: 999px;
+  padding: 6px 16px !important;
+  margin: 0 3px;
+  background: var(--vp-btn-bg) !important;
+  color: var(--vp-text-main) !important;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.VPNavBar .VPNavBarMenuLink:hover,
+.VPNavBar .VPNavBarMenuGroup:hover {
+  background: var(--vp-accent) !important;
+  color: #fff !important;
+  border-color: var(--vp-accent);
+}
+
+/* === 侧边栏链接按钮化 === */
+.VPSidebar .link,
+.VPSidebarItem .link {
+  display: block;
+  padding: 6px 12px;
+  border-radius: 10px;
+  color: var(--vp-text-sub) !important;
+  transition: all 0.2s ease;
+}
+
+.VPSidebar .link:hover,
+.VPSidebarItem .link:hover {
+  background: var(--vp-btn-bg);
+  color: var(--vp-accent) !important;
+}
+
+.VPSidebar .link.link-active,
+.VPSidebarItem .link.link-active {
+  background: var(--vp-accent);
+  color: #fff !important;
+}
+
+/* === 页脚 === */
+.VPFooter,
+.VPDocFooter {
+  background: var(--vp-card-bg);
+  border: 1px solid var(--vp-card-border);
+  border-radius: 16px;
+  padding: 16px 24px;
+  margin-top: 24px;
+  backdrop-filter: blur(16px);
 }
