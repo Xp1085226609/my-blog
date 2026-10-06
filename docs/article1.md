@@ -8,9 +8,9 @@ VitePress 可以渲染Markdown格式文本。
 console.log("hello vitepress")
 ```
 
-## 科创粒子动画
+## 萤火爱心粒子
 
-<canvas id="kechuang-canvas" style="width:100%;height:360px;border-radius:18px;display:block;box-shadow:0 8px 32px rgba(173,20,87,0.25);"></canvas>
+<canvas id="heart-canvas" style="width:100%;height:420px;border-radius:18px;display:block;box-shadow:0 8px 32px rgba(255,100,150,0.2);"></canvas>
 
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
@@ -18,136 +18,191 @@ import { onMounted, onUnmounted } from 'vue'
 let raf = null
 
 onMounted(() => {
-  // 鉴权
   if (localStorage.getItem('blogAuth') !== 'ok') {
     location.replace('./lock.html')
     return
   }
 
-  const canvas = document.getElementById('kechuang-canvas')
+  const canvas = document.getElementById('heart-canvas')
   if (!canvas) return
   const ctx = canvas.getContext('2d')
-
   let W = canvas.parentElement.clientWidth
-  let H = 360
+  let H = 420
   canvas.width = W
   canvas.height = H
 
-  const TEXT = '科创'
-  let particles = []
-  let phase = 0          // 0:模糊飘散 1:组成文字 2:旋转散开 3:隐匿
-  let phaseTime = 0
-
-  // 离屏采样文字像素
-  function sampleText() {
-    const off = document.createElement('canvas')
-    off.width = W
-    off.height = H
-    const octx = off.getContext('2d')
-    octx.fillStyle = '#fff'
-    octx.font = `bold ${Math.min(W * 0.32, 160)}px "PingFang SC", "Microsoft YaHei", sans-serif`
-    octx.textAlign = 'center'
-    octx.textBaseline = 'middle'
-    octx.fillText(TEXT, W / 2, H / 2)
-    const data = octx.getImageData(0, 0, W, H).data
-    particles = []
-    for (let y = 0; y < H; y += 3) {
-      for (let x = 0; x < W; x += 3) {
-        if (data[(y * W + x) * 4 + 3] > 128) {
-          particles.push({
-            tx: x, ty: y,
-            x: Math.random() * W,
-            y: Math.random() * H,
-            vx: 0, vy: 0,
-            size: Math.random() * 1.8 + 0.8,
-            color: `hsl(${320 + Math.random() * 30}, 85%, ${62 + Math.random() * 18}%)`,
-            opacity: 0
-          })
-        }
+  // === 3D 爱心点云（拒绝采样 + 厚度） ===
+  function buildHeartPoints(count) {
+    const pts = []
+    let tries = 0
+    while (pts.length < count && tries < count * 50) {
+      tries++
+      // 在 [-20,20] 范围随机采样
+      const x = (Math.random() - 0.5) * 44
+      const y = (Math.random() - 0.5) * 44
+      const z = (Math.random() - 0.5) * 30
+      // Taubin 爱心隐式曲面方程
+      const v = Math.pow(x*x + 2.25*y*y + z*z - 1, 3) - x*x*z*z*z - 0.1125*y*y*z*z*z
+      if (v < 0 && v > -0.3) {
+        pts.push({ x: x * 8, y: -y * 8, z: z * 8 })
       }
+    }
+    return pts
+  }
+
+  const heartTargets = buildHeartPoints(900)
+
+  // === 主粒子：萤火 + 组爱心 ===
+  class Firefly {
+    constructor() {
+      this.reset()
+      this.phase = Math.random() * Math.PI * 2
+      this.twinkleSpeed = Math.PI * 2 / 60  // 1秒闪烁周期（60帧）
+      this.size = Math.random() * 2 + 1
+      this.hue = 330 + Math.random() * 30
+      this.sat = 85 + Math.random() * 15
+      this.lum = 60 + Math.random() * 20
+    }
+    reset() {
+      this.x = Math.random() * W
+      this.y = Math.random() * H
+      this.vx = (Math.random() - 0.5) * 0.4
+      this.vy = (Math.random() - 0.5) * 0.4
+      this.opacity = 0
+      this.target = null
+    }
+    setTarget(t) { this.target = t }
+  }
+
+  const fireflies = heartTargets.map((t, i) => {
+    const f = new Firefly()
+    f.setTarget(t)
+    return f
+  })
+
+  // === 贴地飞行的环境粒子（少量，不死感） ===
+  const groundBugs = []
+  for (let i = 0; i < 25; i++) {
+    groundBugs.push({
+      x: Math.random() * W,
+      y: H * 0.75 + Math.random() * H * 0.2,
+      vx: (Math.random() - 0.5) * 1.2,
+      vy: (Math.random() - 0.5) * 0.3,
+      size: Math.random() * 1.2 + 0.5,
+      phase: Math.random() * Math.PI * 2,
+      hue: 40 + Math.random() * 20  // 偏暖黄
+    })
+  }
+
+  // === 动画阶段 ===
+  // 0:萤火闪烁(5秒) 1:汇聚爱心(2秒) 2:维持旋转(3秒) 3:散开隐匿(2秒)
+  let phase = 0
+  let frame = 0
+  let rotY = 0
+  const FRAME = 60
+  const PHASE_FRAMES = [5 * FRAME, 2 * FRAME, 3 * FRAME, 2 * FRAME]
+
+  function project3D(p, rot) {
+    const cosY = Math.cos(rot), sinY = Math.sin(rot)
+    const x = p.x * cosY + p.z * sinY
+    const z = -p.x * sinY + p.z * cosY
+    const fov = 600
+    const s = fov / (fov + z + 200)
+    return {
+      sx: W / 2 + x * s,
+      sy: H / 2 + p.y * s,
+      scale: s,
+      depth: z
     }
   }
 
   function drawBackground() {
-    const g = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H)/1.2)
-    g.addColorStop(0, '#2a1040')
-    g.addColorStop(1, '#0d0518')
+    const g = ctx.createRadialGradient(W/2, H*0.4, 0, W/2, H/2, Math.max(W, H))
+    g.addColorStop(0, '#1a0f2e')
+    g.addColorStop(0.6, '#0d0818')
+    g.addColorStop(1, '#050310')
     ctx.fillStyle = g
     ctx.fillRect(0, 0, W, H)
   }
 
+  function drawParticle(x, y, size, color, opacity) {
+    ctx.beginPath()
+    ctx.arc(x, y, size, 0, Math.PI * 2)
+    ctx.fillStyle = color
+    ctx.globalAlpha = opacity
+    ctx.shadowBlur = 10
+    ctx.shadowColor = color
+    ctx.fill()
+    ctx.shadowBlur = 0
+    ctx.globalAlpha = 1
+  }
+
   function animate() {
     drawBackground()
-    phaseTime++
+    frame++
+    const time = frame / FRAME  // 秒
 
-    particles.forEach(p => {
+    // === 贴地飞行粒子（始终无规则飘） ===
+    groundBugs.forEach(b => {
+      b.x += b.vx
+      b.y += b.vy
+      if (b.x < 0 || b.x > W) b.vx *= -1
+      if (b.y < H*0.7 || b.y > H*0.95) b.vy *= -1
+      const tw = 0.3 + 0.5 * (0.5 + 0.5 * Math.sin(time * 2 * Math.PI + b.phase))
+      drawParticle(b.x, b.y, b.size, `hsl(${b.hue},90%,65%)`, tw * 0.7)
+    })
+
+    // === 阶段切换 ===
+    if (frame > PHASE_FRAMES.slice(0, phase + 1).reduce((a,b) => a+b, 0)) {
+      phase++
+      if (phase >= 4) {
+        phase = 0
+        frame = 0
+        fireflies.forEach(f => f.reset())
+      }
+    }
+
+    // === 主粒子 ===
+    fireflies.forEach(f => {
+      let twinkle = 0.5 + 0.5 * Math.sin(time * 2 * Math.PI + f.phase)
+
       if (phase === 0) {
-        // 模糊飘散：缓慢漂移，低透明度
-        p.x += (Math.random() - 0.5) * 0.6
-        p.y += (Math.random() - 0.5) * 0.6
-        p.opacity = Math.min(p.opacity + 0.008, 0.35)
+        // 萤火闪烁：无规则漂移，一闪一闪
+        f.x += f.vx + (Math.random() - 0.5) * 0.3
+        f.y += f.vy + (Math.random() - 0.5) * 0.3
+        f.opacity = Math.min(f.opacity + 0.02, 0.3 + twinkle * 0.5)
       } else if (phase === 1) {
-        // 汇聚成文字
-        p.x += (p.tx - p.x) * 0.06
-        p.y += (p.ty - p.y) * 0.06
-        p.opacity = Math.min(p.opacity + 0.04, 1)
+        // 缓慢组成爱心（3D投影目标点）
+        const proj = project3D(f.target, rotY)
+        f.x += (proj.sx - f.x) * 0.04
+        f.y += (proj.sy - f.y) * 0.04
+        f.opacity = Math.min(f.opacity + 0.03, 1)
       } else if (phase === 2) {
-        // 旋转散开
-        const cx = W / 2, cy = H / 2
-        const dx = p.x - cx, dy = p.y - cy
-        const ang = 0.025
-        const nx = dx * Math.cos(ang) - dy * Math.sin(ang)
-        const ny = dx * Math.sin(ang) + dy * Math.cos(ang)
-        const dist = Math.sqrt(nx*nx + ny*ny) + 0.1
-        p.x = cx + nx + (nx / dist) * 1.5
-        p.y = cy + ny + (ny / dist) * 1.5
-        p.opacity = Math.max(p.opacity - 0.015, 0)
+        // 维持展示：爱心旋转
+        rotY += 0.012
+        const proj = project3D(f.target, rotY)
+        f.x = proj.sx
+        f.y = proj.sy
+        f.opacity = 0.9 + twinkle * 0.1
       } else if (phase === 3) {
-        // 隐匿于背景
-        p.x += p.vx
-        p.y += p.vy
-        p.opacity = Math.max(p.opacity - 0.02, 0)
+        // 散开隐匿
+        f.x += (Math.random() - 0.5) * 2
+        f.y += (Math.random() - 0.5) * 2 - 0.3
+        f.opacity = Math.max(f.opacity - 0.015, 0)
       }
 
-      ctx.beginPath()
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
-      ctx.fillStyle = p.color
-      ctx.globalAlpha = p.opacity
-      ctx.fill()
+      const color = `hsl(${f.hue},${f.sat}%,${f.lum}%)`
+      drawParticle(f.x, f.y, f.size * (phase >= 1 ? 1.2 : 1), color, f.opacity)
     })
-    ctx.globalAlpha = 1
-
-    // 阶段切换
-    if (phase === 0 && phaseTime > 130) { phase = 1; phaseTime = 0 }
-    else if (phase === 1 && phaseTime > 200) { phase = 2; phaseTime = 0 }
-    else if (phase === 2 && phaseTime > 110) {
-      phase = 3; phaseTime = 0
-      particles.forEach(p => {
-        const ang = Math.random() * Math.PI * 2
-        const spd = 1 + Math.random() * 2.5
-        p.vx = Math.cos(ang) * spd
-        p.vy = Math.sin(ang) * spd
-      })
-    }
-    else if (phase === 3 && phaseTime > 130) {
-      phase = 0; phaseTime = 0
-      particles.forEach(p => {
-        p.x = Math.random() * W
-        p.y = Math.random() * H
-        p.opacity = 0
-      })
-    }
 
     raf = requestAnimationFrame(animate)
   }
 
-  sampleText()
   animate()
 
   window.addEventListener('resize', () => {
     W = canvas.parentElement.clientWidth
     canvas.width = W
-    sampleText()
   })
 })
 
