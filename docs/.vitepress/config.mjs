@@ -8,6 +8,8 @@ export default defineConfig({
     nav: [
       { text: "首页", link: "/" },
       { text: "文章", link: "/article1.html" },
+      { text: "标签", link: "/tags.html" },
+      { text: "关于", link: "/about.html" },
       { text: "密码验证页", link: "/lock.html" }
     ],
     footer: {

@@ -1,4 +1,8 @@
-﻿# 博客示例文章
+﻿---
+tags: [VitePress, 前端动画, Canvas]
+---
+
+# 博客示例文章
 VitePress 可以渲染Markdown格式文本。
 
 - 列表项目
