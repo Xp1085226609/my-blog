@@ -7,12 +7,9 @@
 import { onMounted } from 'vue'
 
 onMounted(() => {
-  // 去掉localStorage判断，每次页面加载都弹出密码
-  const pwd = prompt("请输入访问密码")
-  if(pwd === "123456"){
-    // 不再存储授权记录
-  }else{
-    document.body.innerHTML = "<h1 style='text-align:center;margin-top:100px'>密码错误，拒绝访问</h1>"
+  // 未通过 lock.html 验证则跳转密码页（与 lock.html 共用 localStorage 授权，登录一次全站免重复输入）
+  if (localStorage.getItem('blogAuth') !== 'ok') {
+    location.replace('./lock.html')
   }
 })
 </script>

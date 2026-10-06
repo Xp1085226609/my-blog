@@ -3,3 +3,14 @@
 
 ## 内容
 VitePress 非常适合搭建个人博客。
+
+<script setup>
+import { onMounted } from 'vue'
+
+onMounted(() => {
+  // 与 lock.html 共用授权，未登录自动跳转密码页
+  if (localStorage.getItem('blogAuth') !== 'ok') {
+    location.replace('./lock.html')
+  }
+})
+</script>
