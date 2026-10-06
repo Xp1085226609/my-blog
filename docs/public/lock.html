@@ -358,6 +358,11 @@ const STORAGE_KEY = "blogAuth";
 const THEME_KEY = "blogTheme";
 const PWD_SHA256 = "99b7424d371c8bc92e701eafd02ea4ba521dddabe3b54aae1da8e5df7b152941";
 
+/* ---------- 已登录则自动跳首页，不再重复输密码 ---------- */
+if (localStorage.getItem(STORAGE_KEY) === "ok") {
+  location.replace("./index.html");
+}
+
 const verifyBox = document.getElementById('verifyBox');
 const contentBox = document.getElementById('contentBox');
 const errorTip = document.getElementById('errorTip');
