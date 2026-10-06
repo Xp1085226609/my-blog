@@ -8,7 +8,7 @@ VitePress 可以渲染Markdown格式文本。
 console.log("hello vitepress")
 ```
 
-<canvas id="heart-canvas" style="width:100%;height:420px;border-radius:18px;display:block;box-shadow:0 8px 32px rgba(255,100,150,0.2);"></canvas>
+<canvas id="heart-canvas" style="width:100%;height:420px;border-radius:18px;display:block;box-shadow:0 8px 32px rgba(100,200,120,0.15);"></canvas>
 
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
@@ -29,182 +29,166 @@ onMounted(() => {
   canvas.width = W
   canvas.height = H
 
-  // === 3D 爱心点云（参数方程分层采样，描点清晰） ===
-  function buildHeartPoints(count) {
+  // === 预加载背景图 ===
+  const bgImg = new Image()
+  bgImg.src = '/my-blog/heart-bg.jpg'
+
+  // === 3D 爱心锚点（参数方程分层采样） ===
+  function buildHeartTargets(count) {
     const pts = []
-    const layers = 14  // 从内到外14层爱心轮廓
+    const layers = 14
     const perLayer = Math.floor(count / layers)
     for (let i = 0; i < layers; i++) {
       const scale = 0.25 + (i / layers) * 0.75
       for (let j = 0; j < perLayer; j++) {
         const t = (j / perLayer) * Math.PI * 2
-        // 经典爱心参数方程
         const hx = 16 * Math.pow(Math.sin(t), 3)
         const hy = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t)
         const z = (Math.random() - 0.5) * 14
-        pts.push({
-          x: hx * scale * 2.2,
-          y: -hy * scale * 2.2,
-          z: z
-        })
+        pts.push({ x: hx * scale * 2.2, y: -hy * scale * 2.2, z: z })
       }
     }
     return pts
   }
 
-  const heartTargets = buildHeartPoints(1500)
+  const targets = buildHeartTargets(1200)
 
-  // === 预加载背景图 ===
-  const bgImg = new Image()
-  bgImg.src = '/my-blog/heart-bg.jpg'
-
-  // === 主粒子：萤火 + 组爱心 ===
+  // === 主粒子：飘散位置 + 爱心锚点，按 progress 插值 ===
   class Firefly {
-    constructor() {
-      this.reset()
+    constructor(target) {
+      this.target = target
+      this.driftX = Math.random() * W   // 飘散位置
+      this.driftY = Math.random() * H
+      this.vx = (Math.random() - 0.5) * 0.3  // 飘散速度（比环境粒子稍快一点）
+      this.vy = (Math.random() - 0.5) * 0.3
+      this.size = Math.random() * 1.8 + 0.8
+      this.hue = 45 + Math.random() * 20  // 暖黄萤火色
       this.phase = Math.random() * Math.PI * 2
-      this.twinkleSpeed = Math.PI * 2 / 60  // 1秒闪烁周期（60帧）
-      this.size = Math.random() * 2 + 1
-      this.hue = 330 + Math.random() * 30
-      this.sat = 85 + Math.random() * 15
-      this.lum = 60 + Math.random() * 20
+      this.twinkleSpeed = Math.PI * 2 / 60
     }
-    reset() {
-      this.x = Math.random() * W
-      this.y = Math.random() * H
-      this.vx = (Math.random() - 0.5) * 0.4
-      this.vy = (Math.random() - 0.5) * 0.4
-      this.opacity = 0
-      this.target = null
+    updateDrift() {
+      this.driftX += this.vx
+      this.driftY += this.vy
+      if (this.driftX < 0 || this.driftX > W) this.vx *= -1
+      if (this.driftY < 0 || this.driftY > H) this.vy *= -1
     }
-    setTarget(t) { this.target = t }
   }
 
-  const fireflies = heartTargets.map((t, i) => {
-    const f = new Firefly()
-    f.setTarget(t)
-    return f
-  })
+  const fireflies = targets.map(t => new Firefly(t))
 
-  // === 贴地飞行的环境粒子（少量，不死感） ===
-  const groundBugs = []
-  for (let i = 0; i < 25; i++) {
-    groundBugs.push({
+  // === 环境粒子：始终在全图缓慢飘，不参与组成 ===
+  const ambient = []
+  for (let i = 0; i < 40; i++) {
+    ambient.push({
       x: Math.random() * W,
-      y: H * 0.75 + Math.random() * H * 0.2,
-      vx: (Math.random() - 0.5) * 1.2,
-      vy: (Math.random() - 0.5) * 0.3,
-      size: Math.random() * 1.2 + 0.5,
-      phase: Math.random() * Math.PI * 2,
-      hue: 40 + Math.random() * 20  // 偏暖黄
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.15,  // 更慢
+      vy: (Math.random() - 0.5) * 0.15,
+      size: Math.random() * 1 + 0.4,
+      hue: 40 + Math.random() * 30,
+      phase: Math.random() * Math.PI * 2
     })
   }
 
-  // === 动画阶段 ===
-  // 0:萤火闪烁(5秒) 1:缓慢汇聚爱心(4秒) 2:维持旋转(3.5秒) 3:散开隐匿(2秒)
-  let phase = 0
-  let frame = 0
-  let rotY = 0
+  // === 连续 progress 控制：0=全图飘散，1=组成爱心 ===
+  // 时序：飘散2s → 缓慢集结6s → 维持3s → 缓慢散开6s → 循环
+  let progress = 0
+  let direction = 1  // 1=向爱心汇聚，-1=散开
+  let holdFrames = 0
   const FRAME = 60
-  const PHASE_FRAMES = [5 * FRAME, 4 * FRAME, 3.5 * FRAME, 2 * FRAME]
+  const GATHER_SPEED = 1 / (6 * FRAME)   // 6秒从0到1
+  const HOLD_FRAMES = 3 * FRAME          // 维持3秒
+  const DISPERSE_SPEED = 1 / (6 * FRAME) // 6秒从1到0
+
+  let rotY = 0
 
   function project3D(p, rot) {
     const cosY = Math.cos(rot), sinY = Math.sin(rot)
     const x = p.x * cosY + p.z * sinY
     const z = -p.x * sinY + p.z * cosY
-    const fov = 380  // 透视更强，近大远小
+    const fov = 380
     const s = fov / (fov + z + 180)
-    return {
-      sx: W / 2 + x * s,
-      sy: H / 2 + p.y * s,
-      scale: s,
-      depth: z
-    }
+    return { sx: W/2 + x*s, sy: H/2 + p.y*s, scale: s, depth: z }
   }
 
   function drawBackground() {
     if (bgImg.complete && bgImg.naturalWidth > 0) {
       ctx.drawImage(bgImg, 0, 0, W, H)
-      // 叠加一层半透明暗色让粒子更突出
-      ctx.fillStyle = 'rgba(10, 5, 20, 0.35)'
+      // 叠加暗色让粒子更突出
+      ctx.fillStyle = 'rgba(5, 10, 15, 0.3)'
       ctx.fillRect(0, 0, W, H)
     } else {
-      const g = ctx.createRadialGradient(W/2, H*0.4, 0, W/2, H/2, Math.max(W, H))
-      g.addColorStop(0, '#1a0f2e')
-      g.addColorStop(1, '#050310')
-      ctx.fillStyle = g
+      ctx.fillStyle = '#0a1510'
       ctx.fillRect(0, 0, W, H)
     }
   }
 
-  function drawParticle(x, y, size, color, opacity) {
+  function drawDot(x, y, size, color, opacity) {
     ctx.beginPath()
     ctx.arc(x, y, size, 0, Math.PI * 2)
     ctx.fillStyle = color
     ctx.globalAlpha = opacity
-    ctx.shadowBlur = 10
+    ctx.shadowBlur = 8
     ctx.shadowColor = color
     ctx.fill()
     ctx.shadowBlur = 0
     ctx.globalAlpha = 1
   }
 
+  let frame = 0
   function animate() {
     drawBackground()
     frame++
-    const time = frame / FRAME  // 秒
+    const time = frame / FRAME
 
-    // === 贴地飞行粒子（始终无规则飘） ===
-    groundBugs.forEach(b => {
-      b.x += b.vx
-      b.y += b.vy
-      if (b.x < 0 || b.x > W) b.vx *= -1
-      if (b.y < H*0.7 || b.y > H*0.95) b.vy *= -1
-      const tw = 0.3 + 0.5 * (0.5 + 0.5 * Math.sin(time * 2 * Math.PI + b.phase))
-      drawParticle(b.x, b.y, b.size, `hsl(${b.hue},90%,65%)`, tw * 0.7)
-    })
-
-    // === 阶段切换 ===
-    if (frame > PHASE_FRAMES.slice(0, phase + 1).reduce((a,b) => a+b, 0)) {
-      phase++
-      if (phase >= 4) {
-        phase = 0
-        frame = 0
-        fireflies.forEach(f => f.reset())
+    // === progress 连续变化 ===
+    if (direction === 1) {
+      progress += GATHER_SPEED
+      if (progress >= 1) {
+        progress = 1
+        direction = 0  // 进入维持
+        holdFrames = 0
+      }
+    } else if (direction === 0) {
+      holdFrames++
+      if (holdFrames > HOLD_FRAMES) direction = -1
+    } else {
+      progress -= DISPERSE_SPEED
+      if (progress <= 0) {
+        progress = 0
+        direction = 1  // 重新开始集结
       }
     }
 
-    // === 主粒子 ===
+    // 旋转只在接近爱心时明显
+    if (progress > 0.3) rotY += 0.006
+
+    // === 环境粒子（始终缓慢飘） ===
+    ambient.forEach(p => {
+      p.x += p.vx
+      p.y += p.vy
+      if (p.x < 0 || p.x > W) p.vx *= -1
+      if (p.y < 0 || p.y > H) p.vy *= -1
+      const tw = 0.3 + 0.5 * (0.5 + 0.5 * Math.sin(time * 2 * Math.PI + p.phase))
+      drawDot(p.x, p.y, p.size, `hsl(${p.hue},80%,60%)`, tw * 0.6)
+    })
+
+    // === 主粒子：飘散位置和爱心锚点按 progress 插值 ===
     fireflies.forEach(f => {
-      let twinkle = 0.5 + 0.5 * Math.sin(time * 2 * Math.PI + f.phase)
+      f.updateDrift()
+      const proj = project3D(f.target, rotY)
 
-      if (phase === 0) {
-        // 萤火闪烁：无规则漂移，一闪一闪
-        f.x += f.vx + (Math.random() - 0.5) * 0.3
-        f.y += f.vy + (Math.random() - 0.5) * 0.3
-        f.opacity = Math.min(f.opacity + 0.02, 0.3 + twinkle * 0.5)
-      } else if (phase === 1) {
-        // 缓慢组成爱心（3D投影目标点）
-        const proj = project3D(f.target, rotY)
-        f.x += (proj.sx - f.x) * 0.025
-        f.y += (proj.sy - f.y) * 0.025
-        f.opacity = Math.min(f.opacity + 0.02, 1)
-      } else if (phase === 2) {
-        // 维持展示：爱心缓慢旋转
-        rotY += 0.008
-        const proj = project3D(f.target, rotY)
-        f.x = proj.sx
-        f.y = proj.sy
-        f.opacity = 0.9 + twinkle * 0.1
-      } else if (phase === 3) {
-        // 散开隐匿
-        f.x += (Math.random() - 0.5) * 2
-        f.y += (Math.random() - 0.5) * 2 - 0.3
-        f.opacity = Math.max(f.opacity - 0.015, 0)
-      }
+      // 插值：progress=0 在飘散位置，progress=1 在爱心位置
+      const x = f.driftX * (1 - progress) + proj.sx * progress
+      const y = f.driftY * (1 - progress) + proj.sy * progress
 
-      const color = `hsl(${f.hue},${f.sat}%,${f.lum}%)`
-      drawParticle(f.x, f.y, f.size * (phase >= 1 ? 1.2 : 1), color, f.opacity)
+      // 闪烁
+      const twinkle = 0.5 + 0.5 * Math.sin(time * 2 * Math.PI + f.phase)
+      // 组成爱心时更亮更实
+      const opacity = (0.25 + twinkle * 0.3) * (1 - progress * 0.3) + progress * 0.7
+      const size = f.size * (0.8 + proj.scale * progress * 0.4)
+
+      drawDot(x, y, size, `hsl(${f.hue},85%,${60 + twinkle*15}%)`, Math.min(opacity, 1))
     })
 
     raf = requestAnimationFrame(animate)
