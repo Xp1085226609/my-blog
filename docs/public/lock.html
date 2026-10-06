@@ -358,10 +358,7 @@ const STORAGE_KEY = "blogAuth";
 const THEME_KEY = "blogTheme";
 const PWD_SHA256 = "99b7424d371c8bc92e701eafd02ea4ba521dddabe3b54aae1da8e5df7b152941";
 
-/* ---------- 已登录则自动跳首页，不再重复输密码 ---------- */
-if (localStorage.getItem(STORAGE_KEY) === "ok") {
-  location.replace("./index.html");
-}
+/* ---------- 主题偏好持久化，登录状态不保存（每次打开都要密码） ---------- */
 
 const verifyBox = document.getElementById('verifyBox');
 const contentBox = document.getElementById('contentBox');
@@ -442,7 +439,7 @@ async function checkPassword(){
   submitBtn.textContent = '验证中…';
   const hash = await sha256(val);
   if(hash === PWD_SHA256){
-    localStorage.setItem(STORAGE_KEY, "ok");
+    sessionStorage.setItem(STORAGE_KEY, "ok");
     showContent();
   }else{
     submitBtn.disabled = false;
@@ -463,7 +460,7 @@ function showContent(){
 }
 
 logoutBtn.onclick = () => {
-  localStorage.removeItem(STORAGE_KEY);
+  sessionStorage.removeItem(STORAGE_KEY);
   verifyBox.style.display = "block";
   contentBox.classList.remove("show");
   contentBox.style.display = "none";

@@ -1,4 +1,4 @@
-
+﻿
 ## ③ `docs/hello.md`（完整代码）
 
 ```markdown
@@ -13,7 +13,7 @@ import { onMounted } from 'vue'
 
 onMounted(() => {
   // 与 lock.html 共用授权，未登录自动跳转密码页
-  if (localStorage.getItem('blogAuth') !== 'ok') {
+  if (sessionStorage.getItem('blogAuth') !== 'ok') {
     location.replace('./lock.html')
   }
 })

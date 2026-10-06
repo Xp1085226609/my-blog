@@ -1,4 +1,4 @@
-# 博客示例文章
+﻿# 博客示例文章
 VitePress 可以渲染Markdown格式文本。
 
 - 列表项目
@@ -16,7 +16,7 @@ import { onMounted, onUnmounted } from 'vue'
 let raf = null
 
 onMounted(() => {
-  if (localStorage.getItem('blogAuth') !== 'ok') {
+  if (sessionStorage.getItem('blogAuth') !== 'ok') {
     location.replace('./lock.html')
     return
   }
