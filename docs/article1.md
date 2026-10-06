@@ -8,8 +8,6 @@ VitePress 可以渲染Markdown格式文本。
 console.log("hello vitepress")
 ```
 
-## 萤火爱心粒子
-
 <canvas id="heart-canvas" style="width:100%;height:420px;border-radius:18px;display:block;box-shadow:0 8px 32px rgba(255,100,150,0.2);"></canvas>
 
 <script setup>
@@ -31,26 +29,34 @@ onMounted(() => {
   canvas.width = W
   canvas.height = H
 
-  // === 3D 爱心点云（拒绝采样 + 厚度） ===
+  // === 3D 爱心点云（参数方程分层采样，描点清晰） ===
   function buildHeartPoints(count) {
     const pts = []
-    let tries = 0
-    while (pts.length < count && tries < count * 50) {
-      tries++
-      // 在 [-20,20] 范围随机采样
-      const x = (Math.random() - 0.5) * 44
-      const y = (Math.random() - 0.5) * 44
-      const z = (Math.random() - 0.5) * 30
-      // Taubin 爱心隐式曲面方程
-      const v = Math.pow(x*x + 2.25*y*y + z*z - 1, 3) - x*x*z*z*z - 0.1125*y*y*z*z*z
-      if (v < 0 && v > -0.3) {
-        pts.push({ x: x * 8, y: -y * 8, z: z * 8 })
+    const layers = 14  // 从内到外14层爱心轮廓
+    const perLayer = Math.floor(count / layers)
+    for (let i = 0; i < layers; i++) {
+      const scale = 0.25 + (i / layers) * 0.75
+      for (let j = 0; j < perLayer; j++) {
+        const t = (j / perLayer) * Math.PI * 2
+        // 经典爱心参数方程
+        const hx = 16 * Math.pow(Math.sin(t), 3)
+        const hy = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t)
+        const z = (Math.random() - 0.5) * 14
+        pts.push({
+          x: hx * scale * 2.2,
+          y: -hy * scale * 2.2,
+          z: z
+        })
       }
     }
     return pts
   }
 
-  const heartTargets = buildHeartPoints(900)
+  const heartTargets = buildHeartPoints(1500)
+
+  // === 预加载背景图 ===
+  const bgImg = new Image()
+  bgImg.src = '/my-blog/heart-bg.jpg'
 
   // === 主粒子：萤火 + 组爱心 ===
   class Firefly {
@@ -95,19 +101,19 @@ onMounted(() => {
   }
 
   // === 动画阶段 ===
-  // 0:萤火闪烁(5秒) 1:汇聚爱心(2秒) 2:维持旋转(3秒) 3:散开隐匿(2秒)
+  // 0:萤火闪烁(5秒) 1:缓慢汇聚爱心(4秒) 2:维持旋转(3.5秒) 3:散开隐匿(2秒)
   let phase = 0
   let frame = 0
   let rotY = 0
   const FRAME = 60
-  const PHASE_FRAMES = [5 * FRAME, 2 * FRAME, 3 * FRAME, 2 * FRAME]
+  const PHASE_FRAMES = [5 * FRAME, 4 * FRAME, 3.5 * FRAME, 2 * FRAME]
 
   function project3D(p, rot) {
     const cosY = Math.cos(rot), sinY = Math.sin(rot)
     const x = p.x * cosY + p.z * sinY
     const z = -p.x * sinY + p.z * cosY
-    const fov = 600
-    const s = fov / (fov + z + 200)
+    const fov = 380  // 透视更强，近大远小
+    const s = fov / (fov + z + 180)
     return {
       sx: W / 2 + x * s,
       sy: H / 2 + p.y * s,
@@ -117,12 +123,18 @@ onMounted(() => {
   }
 
   function drawBackground() {
-    const g = ctx.createRadialGradient(W/2, H*0.4, 0, W/2, H/2, Math.max(W, H))
-    g.addColorStop(0, '#1a0f2e')
-    g.addColorStop(0.6, '#0d0818')
-    g.addColorStop(1, '#050310')
-    ctx.fillStyle = g
-    ctx.fillRect(0, 0, W, H)
+    if (bgImg.complete && bgImg.naturalWidth > 0) {
+      ctx.drawImage(bgImg, 0, 0, W, H)
+      // 叠加一层半透明暗色让粒子更突出
+      ctx.fillStyle = 'rgba(10, 5, 20, 0.35)'
+      ctx.fillRect(0, 0, W, H)
+    } else {
+      const g = ctx.createRadialGradient(W/2, H*0.4, 0, W/2, H/2, Math.max(W, H))
+      g.addColorStop(0, '#1a0f2e')
+      g.addColorStop(1, '#050310')
+      ctx.fillStyle = g
+      ctx.fillRect(0, 0, W, H)
+    }
   }
 
   function drawParticle(x, y, size, color, opacity) {
@@ -174,12 +186,12 @@ onMounted(() => {
       } else if (phase === 1) {
         // 缓慢组成爱心（3D投影目标点）
         const proj = project3D(f.target, rotY)
-        f.x += (proj.sx - f.x) * 0.04
-        f.y += (proj.sy - f.y) * 0.04
-        f.opacity = Math.min(f.opacity + 0.03, 1)
+        f.x += (proj.sx - f.x) * 0.025
+        f.y += (proj.sy - f.y) * 0.025
+        f.opacity = Math.min(f.opacity + 0.02, 1)
       } else if (phase === 2) {
-        // 维持展示：爱心旋转
-        rotY += 0.012
+        // 维持展示：爱心缓慢旋转
+        rotY += 0.008
         const proj = project3D(f.target, rotY)
         f.x = proj.sx
         f.y = proj.sy
